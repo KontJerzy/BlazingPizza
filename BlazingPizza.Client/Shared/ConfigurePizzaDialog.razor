@@ -1,10 +1,61 @@
-﻿<div class="dialog-container">
+﻿@inject HttpClient HttpClient
+
+<div class="dialog-container">
     <div class="dialog">
         <div class="dialog-title">
             <h2>@Pizza.Special.Name</h2>
             @Pizza.Special.Description
         </div>
-        <form class="dialog-body"></form>
+        <form class="dialog-body">
+            <div>
+                <label>Size:</label>
+                <!-- Here we add a slider on eventchange
+        If only we use just the bind property,
+        the slider reacts when it stops. But we want it to be responsive
+        To get there we add bind:event "oninput"-->
+                <input type="range" min="@Pizza.MinimumSize" max="@Pizza.MaximumSize" step="1"
+                       @bind="Pizza.Size" @bind:event="oninput" />
+                <span class="size-label">
+                    @(Pizza.Size)" (£@(Pizza.GetFormattedTotalPrice()))
+                </span>
+            </div>
+            <!-- Here we add the list of additional material multiple selection-->
+            <div>
+                <label>Extra Toppings:</label>
+                @if (toppings == null)
+                {
+                    <select class="custom-select" disabled>
+                        <option>(loading...)</option>
+                    </select>
+                }
+                else if (Pizza.Toppings.Count >= 6)
+                {
+                    <div>(maximum reached)</div>
+                }
+                else
+                {
+                    <select class="custom-select" @onchange="ToppingSelected">
+                        <option value="-1" disabled selected>(select)</option>
+                        @for (var i = 0; i < toppings.Count; i++)
+                        {
+                            <option value="@i">@toppings[i].Name - (£@(toppings[i].GetFormattedPrice()))</option>
+                        }
+                    </select>
+                }
+            </div>
+
+            <div class="toppings">
+                @foreach (var topping in Pizza.Toppings)
+                {
+                    <div class="topping">
+                        @topping.Topping.Name
+                        <span class="topping-price">@topping.Topping.GetFormattedPrice()</span>
+                        <button type="button" class="delete-topping" @onclick="@(() => RemoveTopping(topping.Topping))">x</button>
+                    </div>
+                }
+            </div>
+            <!--Until here-->
+        </form>
         <div class="dialog-buttons">
             <button class="btn btn-secondary mr-auto">Cancel</button>
             <span class="mr-center">
@@ -15,14 +66,49 @@
     </div>
 </div>
 
+
+
+
 <!--Component parameter values need to have a setter and
     be declared public because they get set by the framework.
     However, they should only be set by the framework as part of the rendering process.
     Don't write code that overwrites these parameter values from outside the component,
     because then your component's state will be out of sync with its render output.-->
-
+<!-- Initialize the list of available toppings by making an
+    HTTP GET request to the /toppings API.-->
 
 @code {
+    List<Topping> toppings;
+
     [Parameter] public Pizza Pizza { get; set; }
+
+    protected async override Task OnInitializedAsync()
+    {
+        toppings = await HttpClient.GetFromJsonAsync<List<Topping>>("toppings");
+    }
+
+    // Also add the following event handlers for topping selection and removal
+
+    void ToppingSelected(ChangeEventArgs e)
+    {
+        if (int.TryParse((string)e.Value, out var index) && index >= 0)
+        {
+            AddTopping(toppings[index]);
+        }
+    }
+
+    void AddTopping(Topping topping)
+    {
+        if (Pizza.Toppings.Find(pt => pt.Topping == topping) == null)
+        {
+            Pizza.Toppings.Add(new PizzaTopping() { Topping = topping });
+        }
+    }
+
+    void RemoveTopping(Topping topping)
+    {
+        Pizza.Toppings.RemoveAll(pt => pt.Topping == topping);
+    }
+
 }
 
