@@ -1,0 +1,67 @@
+﻿@page "/"
+<!--from c# but we can communicate with server to put that in a function go get data from somewhere-->
+@inject HttpClient HttpClient
+<!--This Division takes individual special pizza from the list and apply the same appearance rule
+    to all of them to represent them with hover effects, images, descriptions, and prizes.-->
+@* Here I need to check the card effect howw they achieve that *@
+
+<div class="main">
+    <ul class="pizza-cards">
+        @if (specials != null)
+        {
+            @foreach (var special in specials)
+            {
+                <li @onclick="@(() => ShowConfigurePizzaDialog(special))" style="background-image: url('@special.ImageUrl')">
+                    <div class="pizza-info">
+                        <span class="title">@special.Name</span>
+                        @special.Description
+                        <span class="price">@special.GetFormattedBasePrice()</span>
+                    </div>
+                </li>
+            }
+        }
+    </ul>
+</div>
+
+
+<!--show the ConfigurePizzaDialog when a pizza special has been selected.
+    The ConfigurePizzaDialog is styled to overlay the current page,
+    so it doesn't really matter where you put this code block.-->
+
+@if (showingConfigureDialog)
+{
+    <ConfigurePizzaDialog Pizza="configuringPizza" />
+}
+
+<!--This code deals with the list, gethers from server using HTTP client and uses java async to see
+    whether the list is upgraded or not. -->
+
+
+
+@code{
+    /// for tracking the pizza being customized and
+    // whether the pizza customization dialog is visible
+
+    List<PizzaSpecial> specials;
+    Pizza configuringPizza;
+    bool showingConfigureDialog;
+
+    protected override async Task OnInitializedAsync()
+    {
+        specials = await HttpClient.GetFromJsonAsync<List<PizzaSpecial>>("specials");
+    }
+
+    void ShowConfigurePizzaDialog(PizzaSpecial special)
+    {
+        configuringPizza = new Pizza()
+        {
+            Special = special,
+            SpecialId = special.Id,
+            Size = Pizza.DefaultSize,
+            Toppings = new List<PizzaTopping>(),
+        };
+
+        showingConfigureDialog = true;
+    }
+}
+

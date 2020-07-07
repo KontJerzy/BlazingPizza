@@ -1,0 +1,29 @@
+﻿@inherits LayoutComponentBase
+<!-- Here is the top bar, logo -->
+@* To see how the layout is associated with your pages,
+    look at the <Router> component in App.razor.
+    Notice that the DefaultLayout parameter determines
+    the layout used for any page that doesn't specify its own layout directly *@
+@* You can also override this DefaultLayout on a per-page basis.
+    To do so, you can add a directive such as @layout SomeOtherLayout
+    at the top of any .razor page component *@
+
+<div class="top-bar">
+    <a class="logo" href="">
+        <img src="img/logo.svg" />
+    </a>
+
+    <!-- Navigation bar is nested in the top bar
+        The NavLink component is provided by Blazor.
+         it adds an active class if the current URL matches the link address
+        NavLinkMatch.All means that the link should be active only when it matches the entire current URL-->
+
+    <NavLink href="" class="nav-tab" Match="NavLinkMatch.All">
+        <img src="img/pizza-slice.svg" />
+        <div>Get Pizza</div>
+    </NavLink>
+</div>
+
+<div class="content">
+    @Body
+</div>

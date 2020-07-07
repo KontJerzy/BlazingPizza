@@ -1,0 +1,28 @@
+﻿<div class="dialog-container">
+    <div class="dialog">
+        <div class="dialog-title">
+            <h2>@Pizza.Special.Name</h2>
+            @Pizza.Special.Description
+        </div>
+        <form class="dialog-body"></form>
+        <div class="dialog-buttons">
+            <button class="btn btn-secondary mr-auto">Cancel</button>
+            <span class="mr-center">
+                Price: <span class="price">@(Pizza.GetFormattedTotalPrice())</span>
+            </span>
+            <button class="btn btn-success ml-auto">Order ></button>
+        </div>
+    </div>
+</div>
+
+<!--Component parameter values need to have a setter and
+    be declared public because they get set by the framework.
+    However, they should only be set by the framework as part of the rendering process.
+    Don't write code that overwrites these parameter values from outside the component,
+    because then your component's state will be out of sync with its render output.-->
+
+
+@code {
+    [Parameter] public Pizza Pizza { get; set; }
+}
+
