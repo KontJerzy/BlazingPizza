@@ -23,14 +23,47 @@
     </ul>
 </div>
 
+<!--right side pane for displaying the configured pizzas in the current order.-->
+
+<div class="sidebar">
+    @if (order.Pizzas.Any())
+    {
+        <div class="order-contents">
+            <h2>Your order</h2>
+
+            @foreach (var configuredPizza in order.Pizzas)
+            {
+                <ConfiguredPizzaItem Pizza="configuredPizza" OnRemoved="@(() => RemoveConfiguredPizza(configuredPizza))" />
+            }
+        </div>
+    }
+    else
+    {
+        <div class="empty-cart">Choose a pizza<br>to get started</div>
+    }
+
+    <div class="order-total @(order.Pizzas.Any() ? "" : "hidden")">
+        Total:
+        <span class="total-price">@order.GetFormattedTotalPrice()</span>
+        <button class="btn btn-warning" disabled="@(order.Pizzas.Count == 0)" @onclick="PlaceOrder">
+            Order >
+        </button>
+    </div>
+</div>
 
 <!--show the ConfigurePizzaDialog when a pizza special has been selected.
     The ConfigurePizzaDialog is styled to overlay the current page,
     so it doesn't really matter where you put this code block.-->
+<!--Here ConfigurePizzaDialog tag refers to the page and
+    referances the attributes at the page-->
 
 @if (showingConfigureDialog)
 {
-    <ConfigurePizzaDialog Pizza="configuringPizza" />
+    <ConfigurePizzaDialog Pizza="configuringPizza"
+                          OnCancel="CancelConfigurePizzaDialog"
+                          OnConfirm="ConfirmConfigurePizzaDialog" />
+
+
 }
 
 <!--This code deals with the list, gethers from server using HTTP client and uses java async to see
@@ -45,6 +78,10 @@
     List<PizzaSpecial> specials;
     Pizza configuringPizza;
     bool showingConfigureDialog;
+
+    // When the OnConfirm event is fired, the customized pizza should be added to the user's order.
+    // Add an Order field to the Index component to track the user's order.
+    Order order = new Order();
 
     protected override async Task OnInitializedAsync()
     {
@@ -62,6 +99,35 @@
         };
 
         showingConfigureDialog = true;
+    }
+
+    // This event that hides the dialog and empties the configuring pizza
+    void CancelConfigurePizzaDialog()
+    {
+        configuringPizza = null;
+        showingConfigureDialog = false;
+    }
+
+    // OnConfirm event that adds the configured pizza to the order and empties the configuring pizza
+    void ConfirmConfigurePizzaDialog()
+    {
+        order.Pizzas.Add(configuringPizza);
+        configuringPizza = null;
+
+        showingConfigureDialog = false;
+    }
+
+    // component for removing a configured pizza from the order
+    void RemoveConfiguredPizza(Pizza pizza)
+    {
+        order.Pizzas.Remove(pizza);
+    }
+
+    // component for submitting the order
+    async Task PlaceOrder()
+    {
+        await HttpClient.PostAsJsonAsync("orders", order);
+        order = new Order();
     }
 }
 
