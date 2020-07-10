@@ -10,9 +10,9 @@
             <div>
                 <label>Size:</label>
                 <!-- Here we add a slider on eventchange
-        If only we use just the bind property,
-        the slider reacts when it stops. But we want it to be responsive
-        To get there we add bind:event "oninput"-->
+                If only we use just the bind property,
+                the slider reacts when it stops. But we want it to be responsive
+                To get there we add bind:event "oninput"-->
                 <input type="range" min="@Pizza.MinimumSize" max="@Pizza.MaximumSize" step="1"
                        @bind="Pizza.Size" @bind:event="oninput" />
                 <span class="size-label">
@@ -57,11 +57,13 @@
             <!--Until here-->
         </form>
         <div class="dialog-buttons">
-            <button class="btn btn-secondary mr-auto">Cancel</button>
+            <!-- We add onclick event handler to callback OnCancel Event-->
+            <button class="btn btn-secondary mr-auto" @onclick="OnCancel">Cancel</button>
             <span class="mr-center">
                 Price: <span class="price">@(Pizza.GetFormattedTotalPrice())</span>
             </span>
-            <button class="btn btn-success ml-auto">Order ></button>
+            <!-- We add onclick event handler to callback OnConfirm Event-->
+            <button class="btn btn-success ml-auto" @onclick="OnConfirm">Order ></button>
         </div>
     </div>
 </div>
@@ -81,6 +83,16 @@
     List<Topping> toppings;
 
     [Parameter] public Pizza Pizza { get; set; }
+
+    // Component events are callback parameters that parent components can subscribe to.
+    // Both parameters should be of type EventCallback.
+    //  Now when you click the dialog's Cancel button, Index.CancelConfigurePizzaDialog will execute,
+    // and then the Index component will rerender itself.
+    // Since showingConfigureDialog is now false the dialog will not be displayed.
+    // EventCallback ells the compiler to dispatch the event to the component that contains the event handler logic.
+    // using EventCallback makes your component smart about dispatching events to the right place.
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public EventCallback OnConfirm { get; set; }
 
     protected async override Task OnInitializedAsync()
     {
