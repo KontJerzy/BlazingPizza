@@ -14,14 +14,33 @@
     </a>
 
     <!-- Navigation bar is nested in the top bar
-        The NavLink component is provided by Blazor.
-         it adds an active class if the current URL matches the link address
-        NavLinkMatch.All means that the link should be active only when it matches the entire current URL-->
+    The NavLink component is provided by Blazor.
+        it adds an active class if the current URL matches the link address
+    NavLinkMatch.All means that the link should be active only when it matches the entire current URL-->
 
     <NavLink href="" class="nav-tab" Match="NavLinkMatch.All">
         <img src="img/pizza-slice.svg" />
         <div>Get Pizza</div>
     </NavLink>
+
+    <!--Adding a new link element with/out using a NavLink component.
+        When You click on the link to myorders,
+        Blazor, running on the client, tries to match this to a client-side component based on
+        [at]page directive attributes. However, since no match is found, Blazor falls back on
+        full-page load navigation in case the URL is meant to be handled by server-side code.
+        However, the server doesn't have anything that matches this either,
+        so it falls back on rendering the client-side Blazor application.
+        This time, Blazor sees that nothing matches on either client or server,
+        so it falls back on rendering the NotFound block from your App.razor component.
+        The only special thing a NavLink component does is toggle its own active CSS class
+        depending on whether its href matches the current navigation state.
+        Replace <a> tag with <navlink> -->
+
+    <NavLink href="myorders" class="nav-tab">
+        <img src="img/bike.svg" />
+        <div>My Orders</div>
+    </NavLink>
+
 </div>
 
 <div class="content">
