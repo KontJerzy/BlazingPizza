@@ -1,0 +1,91 @@
+﻿@page "/myorders/{orderId:int}"
+@inject HttpClient HttpClient
+@implements IDisposable
+@using System.Threading
+
+
+@*  This accounts for the three main states of the component:
+    If the OrderId value is invalid (i.e., the server reported an error when we tried to retrieve the data)
+    If we haven't yet loaded the data
+    If we have got some data to show *@
+
+
+<div class="main">
+    @if (invalidOrder)
+    {
+        <h2>Nope</h2>
+        <p>Sorry, this order could not be loaded.</p>
+    }
+    else if (orderWithStatus == null)
+    {
+        <text>Loading...</text>
+    }
+    else // Once we have order, Go to shared folder and run the OrderReview Component
+    { 
+        <div class="track-order">
+            <div class="track-order-title">
+                <h2>
+                    Order placed @orderWithStatus.Order.CreatedTime.ToLongDateString()
+                </h2>
+                <p class="ml-auto mb-0">
+                    Status: <strong>@orderWithStatus.StatusText</strong>
+                </p>
+            </div>
+            <div class="track-order-body">
+                <div class="track-order-details">
+                    <OrderReview Order="orderWithStatus.Order" />
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+
+@code {
+    [Parameter] public int OrderId { get; set; }
+
+    OrderWithStatus orderWithStatus;
+    bool invalidOrder;
+    CancellationTokenSource pollingCancellationToken;
+
+    protected override void OnParametersSet()
+    {
+        // If we were already polling for a different order, stop doing so
+        pollingCancellationToken?.Cancel();
+
+        // Start a new poll loop
+        PollForUpdates();
+    }
+
+    private async void PollForUpdates()
+    {
+        pollingCancellationToken = new CancellationTokenSource();
+        while (!pollingCancellationToken.IsCancellationRequested)
+        {
+            try
+            {
+                invalidOrder = false;
+                orderWithStatus = await HttpClient.GetFromJsonAsync<OrderWithStatus>($"orders/{OrderId}");
+            }
+            catch (Exception ex)
+            {
+                invalidOrder = true;
+                pollingCancellationToken.Cancel();
+                Console.Error.WriteLine(ex);
+            }
+
+            // We need to call StateHasChanged to tell Blazor that the component's data has (possibly) changed.
+            // The framework will then re-render the component.
+            // There's no way that the framework could know when to re-render your component otherwise,
+            // because it doesn't know about your polling logic.
+            StateHasChanged();
+            await Task.Delay(4000);
+        }
+    }
+
+    // Gets rid of the error: 'OrderDetails' does not implement interface member 'IDisposable.Dispose()'
+    void IDisposable.Dispose()
+    {
+        pollingCancellationToken?.Cancel();
+    }
+}

@@ -1,6 +1,8 @@
 ﻿@page "/"
 <!--from c# but we can communicate with server to put that in a function go get data from somewhere-->
 @inject HttpClient HttpClient
+<!--help the app automatically navigated to the "order details" display for that order-->
+@inject NavigationManager NavigationManager
 <!--This Division takes individual special pizza from the list and apply the same appearance rule
     to all of them to represent them with hover effects, images, descriptions, and prizes.-->
 @* Here I need to check the card effect howw they achieve that *@
@@ -126,8 +128,13 @@
     // component for submitting the order
     async Task PlaceOrder()
     {
-        await HttpClient.PostAsJsonAsync("orders", order);
+        var response = await HttpClient.PostAsJsonAsync("orders", order);
+        var newOrderId = await response.Content.ReadFromJsonAsync<int>();
         order = new Order();
+
+        // The NavigationManager lets you interact with URIs and navigation state.
+        // It has methods to get the current URL, to navigate to a different one, and more.
+        NavigationManager.NavigateTo($"myorders/{newOrderId}");
     }
 }
 

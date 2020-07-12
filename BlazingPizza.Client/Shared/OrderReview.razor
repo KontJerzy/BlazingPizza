@@ -1,0 +1,31 @@
+﻿<!--The last bit of UI we want to add is the actual contents of the order.
+    To do this, we'll create another reusable component.-->
+
+@foreach (var pizza in Order.Pizzas)
+{
+    <p>
+        <strong>
+            @(pizza.Size)"
+            @pizza.Special.Name
+            (£@pizza.GetFormattedTotalPrice())
+        </strong>
+    </p>
+
+    <ul>
+        @foreach (var topping in pizza.Toppings)
+        {
+            <li>+ @topping.Topping.Name</li>
+        }
+    </ul>
+}
+
+<p>
+    <strong>
+        Total price:
+        £@Order.GetFormattedTotalPrice()
+    </strong>
+</p>
+
+@code {
+    [Parameter] public Order Order { get; set; }
+}
