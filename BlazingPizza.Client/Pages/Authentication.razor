@@ -1,0 +1,36 @@
+﻿@page "/authentication/{action}"
+@inject OrderState OrderState
+@inject NavigationManager NavigationManager
+<!--The Authentication component is setup to handle the various authentication actions
+    using the built-in RemoteAuthenticatorView component.
+    The Action parameter is bound to the {action} route value,
+    which is then passed to the RemoteAuthenticatorView component to handle.
+    The RemoteAuthenticatorView handles all of the actions used as part of remote authentication.
+    Valid actions include: register, login, profile, and logout. -->
+
+<RemoteAuthenticatorViewCore TAuthenticationState="PizzaAuthenticationState"
+                             AuthenticationState="RemoteAuthenticationState"
+                             OnLogInSucceeded="RestorePizza"
+                             Action="@Action" />
+@code{
+    [Parameter] public string Action { get; set; }
+
+    public PizzaAuthenticationState RemoteAuthenticationState { get; set; } = new PizzaAuthenticationState();
+
+    protected override void OnInitialized()
+    {
+        if (RemoteAuthenticationActions.IsAction(RemoteAuthenticationActions.LogIn, Action))
+        {
+            // Preserve the current order so that we don't loose it
+            RemoteAuthenticationState.Order = OrderState.Order;
+        }
+    }
+
+    private void RestorePizza(PizzaAuthenticationState pizzaState)
+    {
+        if (pizzaState.Order != null)
+        {
+            OrderState.ReplaceOrder(pizzaState.Order);
+        }
+    }
+}

@@ -1,10 +1,22 @@
-﻿<Router AppAssembly="typeof(Program).Assembly" Context="routeData">
-    <Found>
-        <RouteView RouteData="routeData" DefaultLayout="typeof(MainLayout)" />
-    </Found>
-    <NotFound>
-        <LayoutView Layout="typeof(MainLayout)">
-            <div class="main">Sorry, there's nothing at this address.</div>
-        </LayoutView>
-    </NotFound>
-</Router>
+﻿<!--At first this will appear to do nothing, but in fact this has made a cascading parameter available
+    to all descendant components. A cascading parameter is a parameter that isn't passed down just one level in the hierarchy,
+    but through any number of levels.-->
+<CascadingAuthenticationState>
+    <Router AppAssembly="typeof(Program).Assembly" Context="routeData">
+        <Found>
+            <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(MainLayout)">
+                <NotAuthorized>
+                    <RedirectToLogin />
+                </NotAuthorized>
+                <Authorizing>
+                    <div class="main">Please wait...</div>
+                </Authorizing>
+            </AuthorizeRouteView>
+        </Found>
+        <NotFound>
+            <LayoutView Layout="typeof(MainLayout)">
+                <div class="main">Sorry, there's nothing at this address.</div>
+            </LayoutView>
+        </NotFound>
+    </Router>
+</CascadingAuthenticationState>

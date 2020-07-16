@@ -1,0 +1,64 @@
+﻿@page "/checkout"
+@inject OrderState OrderState
+@inject NavigationManager NavigationManager
+@inject HttpClient HttpClient
+@attribute [Authorize]
+@inject IAccessTokenProvider TokenProvider
+<!--One of the most important built-in UI components for data entry is the EditForm.
+    This renders as an HTML <form> tag,
+    but also sets up an EditContext to track what's going on inside the form.-->
+<div class="main">
+    <!--Place order button event came here as valid submit
+        As you can probably guess, the <button> no longer triggers PlaceOrder directly.
+        Instead, the button just asks the form to be submitted.
+        And then the form decides whether or not it's valid,
+        and if it is, then it will call PlaceOrder-->
+    <EditForm Model="OrderState.Order.DeliveryAddress" OnValidSubmit="PlaceOrder">
+        <div class="checkout-cols">
+            <div class="checkout-order-details">
+                <h4>Review order</h4>
+                <OrderReview Order="OrderState.Order" />
+            </div>
+            <!--Address form will be here attached from the component in shared folder-->
+            <div class="checkout-delivery-address">
+                <h4>Deliver to...</h4>
+                <AddressEditor Address="OrderState.Order.DeliveryAddress" />
+            </div>
+        </div>
+
+        <!--There was an onclick event but changed with submit
+            the purpuse of disabled property is that we need just one click otherwise disable-->
+        <button class="checkout-button btn btn-warning" type="submit" disabled="@isSubmitting">
+            Place order
+        </button>
+        <!--Displays the incomplete message
+            <ValidationSummary /> were here instead they moved to the html address editor part
+            when they were here, the msjs was appearing ugly in someplace in the page-->
+        <DataAnnotationsValidator />
+    </EditForm>
+</div>
+
+@code {
+    bool isSubmitting;
+
+    async Task PlaceOrder()
+    {
+        isSubmitting = true;
+
+        var tokenResult = await TokenProvider.RequestAccessToken();
+        if (tokenResult.TryGetToken(out var accessToken))
+        {
+            var request = new HttpRequestMessage(HttpMethod.Post, "orders");
+            request.Content = JsonContent.Create(OrderState.Order);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken.Value);
+            var response = await HttpClient.SendAsync(request);
+            var newOrderId = await response.Content.ReadFromJsonAsync<int>();
+            OrderState.ResetOrder();
+            NavigationManager.NavigateTo($"myorders/{newOrderId}");
+        }
+        else
+        {
+            NavigationManager.NavigateTo(tokenResult.RedirectUrl);
+        }
+    }
+}
