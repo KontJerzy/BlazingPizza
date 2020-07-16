@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,7 +11,8 @@ namespace BlazingPizza.Server
 {
     [Route("orders")]
     [ApiController]
-    // [Authorize]
+    //  To require that all requests to these endpoints come from authenticated users
+    [Authorize]
     public class OrdersController : Controller
     {
         private readonly PizzaStoreContext _db;
@@ -24,7 +26,8 @@ namespace BlazingPizza.Server
         public async Task<ActionResult<List<OrderWithStatus>>> GetOrders()
         {
             var orders = await _db.Orders
-                // .Where(o => o.UserId == GetUserId())
+                // user can only deals with own order
+                .Where(o => o.UserId == GetUserId())
                 .Include(o => o.DeliveryLocation)
                 .Include(o => o.Pizzas).ThenInclude(p => p.Special)
                 .Include(o => o.Pizzas).ThenInclude(p => p.Toppings).ThenInclude(t => t.Topping)
@@ -39,7 +42,8 @@ namespace BlazingPizza.Server
         {
             var order = await _db.Orders
                 .Where(o => o.OrderId == orderId)
-                // .Where(o => o.UserId == GetUserId())
+                // user can only deals with own order
+                .Where(o => o.UserId == GetUserId())
                 .Include(o => o.DeliveryLocation)
                 .Include(o => o.Pizzas).ThenInclude(p => p.Special)
                 .Include(o => o.Pizzas).ThenInclude(p => p.Toppings).ThenInclude(t => t.Topping)
@@ -58,7 +62,8 @@ namespace BlazingPizza.Server
         {
             order.CreatedTime = DateTime.Now;
             order.DeliveryLocation = new LatLong(51.5001, -0.1239);
-            // order.UserId = GetUserId();
+            // here we attach the order to the specific user id
+            order.UserId = GetUserId();
 
             // Enforce existence of Pizza.SpecialId and Topping.ToppingId
             // in the database - prevent the submitter from making up

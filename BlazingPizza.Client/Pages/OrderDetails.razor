@@ -1,9 +1,10 @@
 ﻿@page "/myorders/{orderId:int}"
-@inject HttpClient HttpClient
+@attribute [Authorize]
 @implements IDisposable
+@inject NavigationManager NavigationManager
 @using System.Threading
-
-
+@inject IAccessTokenProvider TokenProvider
+@inject HttpClient HttpClient
 @*  This accounts for the three main states of the component:
     If the OrderId value is invalid (i.e., the server reported an error when we tried to retrieve the data)
     If we haven't yet loaded the data
@@ -21,7 +22,7 @@
         <text>Loading...</text>
     }
     else // Once we have order, Go to shared folder and run the OrderReview Component
-    { 
+    {
         <div class="track-order">
             <div class="track-order-title">
                 <h2>
@@ -59,28 +60,40 @@
 
     private async void PollForUpdates()
     {
-        pollingCancellationToken = new CancellationTokenSource();
-        while (!pollingCancellationToken.IsCancellationRequested)
+        var tokenResult = await TokenProvider.RequestAccessToken();
+        if (tokenResult.TryGetToken(out var accessToken))
         {
-            try
+            pollingCancellationToken = new CancellationTokenSource();
+            while (!pollingCancellationToken.IsCancellationRequested)
             {
-                invalidOrder = false;
-                orderWithStatus = await HttpClient.GetFromJsonAsync<OrderWithStatus>($"orders/{OrderId}");
-            }
-            catch (Exception ex)
-            {
-                invalidOrder = true;
-                pollingCancellationToken.Cancel();
-                Console.Error.WriteLine(ex);
-            }
+                try
+                {
+                    invalidOrder = false;
+                    var request = new HttpRequestMessage(HttpMethod.Get, $"orders/{OrderId}");
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken.Value);
+                    var response = await HttpClient.SendAsync(request);
+                    orderWithStatus = await response.Content.ReadFromJsonAsync<OrderWithStatus>();
+                }
+                catch (Exception ex)
+                {
+                    invalidOrder = true;
+                    pollingCancellationToken.Cancel();
+                    Console.Error.WriteLine(ex);
+                }
 
-            // We need to call StateHasChanged to tell Blazor that the component's data has (possibly) changed.
-            // The framework will then re-render the component.
-            // There's no way that the framework could know when to re-render your component otherwise,
-            // because it doesn't know about your polling logic.
-            StateHasChanged();
-            await Task.Delay(4000);
+                // We need to call StateHasChanged to tell Blazor that the component's data has (possibly) changed.
+                // The framework will then re-render the component.
+                // There's no way that the framework could know when to re-render your component otherwise,
+                // because it doesn't know about your polling logic.
+                StateHasChanged();
+                await Task.Delay(4000);
+            }
         }
+        else
+        {
+            NavigationManager.NavigateTo(tokenResult.RedirectUrl);
+        }
+
     }
 
     // Gets rid of the error: 'OrderDetails' does not implement interface member 'IDisposable.Dispose()'
@@ -88,4 +101,4 @@
     {
         pollingCancellationToken?.Cancel();
     }
-}
+    }
